@@ -1,0 +1,15 @@
+{
+  "model": "TVS iQube ST",
+  "version": "1.0.0",
+  "updated": "2025-11-07",
+  "tests": [
+    { "label": "Battery Voltage",      "module": "Battery_Voltage",            "function": "Battery_Voltage",     "button":"Check" },
+    { "label": "Photosensor",          "module": "Read_Photosensor",           "function": "Read_Photosensor",    "button":"Check" },
+    { "label": "Odometer",             "module": "Read_Displayed_Odometer",    "function": "Read_Displayed_Odometer", "button":"Check" },
+    { "label": "Write TPMS Front",     "module": "WRITE_TPMS_FRONT",           "function": "WRITE_TPMS_FRONT", "requires_mac": true, "button":"Write" },
+    { "label": "Write TPMS Rear",      "module": "WRITE_TPMS_REAR",            "function": "WRITE_TPMS_REAR",  "requires_mac": true, "button":"Write" },    
+    { "label": "Read TPMS Front",      "module": "Read_Tpms_Front",            "function": "Read_Tpms_Front",     "button":"Read" },
+    { "label": "Read TPMS Rear",       "module": "Read_Tpms_Rear",             "function": "Read_Tpms_Rear",    "button":"Read" },
+    { "label": "Read VIN",             "module": "Read_Vin_Number",            "function": "Read_Vin_Number",     "button":"Read" }
+  ]
+}

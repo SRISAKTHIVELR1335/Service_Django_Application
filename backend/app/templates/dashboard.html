@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - NIRIX Diagnostics{% endblock %}
+
+{% block content %}
+
+<style>
+    /* Raspberry-Pi style clickable card */
+    .vehicle-card {
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        border-radius: 10px;
+    }
+
+    .vehicle-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .vehicle-img {
+        max-height: 140px;
+        object-fit: contain;
+    }
+</style>
+
+<div class="container-fluid">
+
+    <!-- PAGE HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+        </h1>
+    </div>
+
+    <!-- =========================== STAT CARDS =========================== -->
+    <div class="row g-4 mb-4">
+
+        <div class="col-md-3">
+            <div class="card bg-primary text-white h-100 shadow">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-white-50">Total Vehicles</h6>
+                    <h2 class="card-title mb-0">{{ stats.total_vehicles }}</h2>
+                    <i class="bi bi-truck display-6 opacity-25"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-info text-white h-100 shadow">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-white-50">Total Tests</h6>
+                    <h2 class="card-title mb-0">{{ stats.total_logs }}</h2>
+                    <i class="bi bi-clipboard-check display-6 opacity-25"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-success text-white h-100 shadow">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-white-50">Passed</h6>
+                    <h2 class="card-title mb-0">{{ stats.pass_count }}</h2>
+                    <i class="bi bi-check-circle display-6 opacity-25"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-danger text-white h-100 shadow">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-white-50">Failed</h6>
+                    <h2 class="card-title mb-0">{{ stats.fail_count }}</h2>
+                    <i class="bi bi-x-circle display-6 opacity-25"></i>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- =========================== VEHICLE MODELS =========================== -->
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-header bg-white">
+            <div class="row g-3 align-items-center">
+
+                <div class="col-md-6">
+                    <h5 class="mb-0">
+                        <i class="bi bi-truck me-2"></i>Vehicle Models
+                    </h5>
+                </div>
+
+                <!-- Filter + Search -->
+                <div class="col-md-6">
+                    <form method="GET" class="row g-2">
+
+                        <div class="col-md-5">
+                            <select name="category" class="form-select" onchange="this.form.submit()">
+                                <option value="All Models">All Models</option>
+
+                                {% for cat in categories %}
+                                <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>
+                                    {{ cat }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-7">
+                            <div class="input-group">
+                                <input type="text" name="search" class="form-control"
+                                       placeholder="Search vehicles..."
+                                       value="{{ search or '' }}">
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- =========================== VEHICLE GRID =========================== -->
+        <div class="card-body">
+
+            {% if vehicles %}
+            <div class="row g-4">
+
+                {% for vehicle in vehicles %}
+                <div class="col-md-4 col-lg-3">
+
+                    <!-- FULL CARD CLICK HANDLER -->
+                    <div class="card vehicle-card h-100 shadow-sm"
+                         onclick="window.location='{{ url_for('web.tests', vehicle_id=vehicle.id) }}'">
+
+                        <!-- IMAGE -->
+                        <div class="text-center p-3">
+
+                            <img src="{{ url_for('static', filename='Vehicle_Images/' ~ vehicle.image_filename) }}"
+                                 class="img-fluid vehicle-img"
+                                 alt="{{ vehicle.name }}">
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <!-- VEHICLE NAME -->
+                            <h6 class="fw-bold mb-1">{{ vehicle.name }}</h6>
+
+                            <!-- CATEGORY -->
+                            <span class="badge bg-secondary">{{ vehicle.category }}</span>
+
+                            <!-- DESCRIPTION -->
+                            {% if vehicle.description %}
+                            <p class="text-muted small mt-2">
+                                {{ vehicle.description[:100] }}
+                                {% if vehicle.description|length > 100 %}...{% endif %}
+                            </p>
+                            {% endif %}
+
+                            <!-- VIN PATTERN -->
+                            {% if vehicle.vin_pattern %}
+                            <p class="small mb-0">
+                                <strong>VIN:</strong> {{ vehicle.vin_pattern }}
+                            </p>
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+                </div>
+                {% endfor %}
+
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted"></i>
+                <p class="text-muted mt-3">No vehicles found</p>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

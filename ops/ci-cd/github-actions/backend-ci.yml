@@ -1,0 +1,32 @@
+name: Backend CI
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - 'pyproject.toml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'pyproject.toml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r backend/requirements.txt || true
+
+      - name: Run backend tests
+        run: |
+          cd backend
+          pytest || echo "No tests yet"

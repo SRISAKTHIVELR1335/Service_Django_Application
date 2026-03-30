@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Test Programs - NIRIX Diagnostics{% endblock %}
+
+{% block content %}
+
+<style>
+    .test-result-table pre {
+        white-space: pre-wrap;
+        margin: 0;
+    }
+
+    .test-card {
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .test-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 18px rgba(0,0,0,0.1);
+    }
+</style>
+
+<div class="container-fluid">
+
+    <h2 class="mb-4">
+        <i class="bi bi-list-check me-2"></i>Test Programs
+    </h2>
+
+    <!-- ========================= VEHICLE FILTER ========================= -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Select Vehicle Model</label>
+                    <select name="vehicle_id" class="form-select" onchange="this.form.submit()">
+                        <option value="">-- Choose Vehicle --</option>
+                        {% for v in vehicles %}
+                            <option value="{{ v.id }}"
+                                {% if selected_vehicle and selected_vehicle.id == v.id %}selected{% endif %}>
+                                {{ v.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- NOTHING SELECTED -->
+    {% if not selected_vehicle %}
+    <div class="text-center py-5">
+        <i class="bi bi-car-front display-3 text-muted"></i>
+        <p class="text-muted mt-3">Please select a vehicle to view test programs.</p>
+    </div>
+    {% else %}
+
+    <!-- ========================= VEHICLE HEADER ========================= -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">
+                {{ selected_vehicle.name }}
+                <span class="badge bg-secondary ms-2">{{ selected_vehicle.category }}</span>
+            </h5>
+        </div>
+
+        <div class="card-body">
+
+            {% if test_folder_exists %}
+
+            <!-- ========================= LIST TEST PROGRAM FILES ========================= -->
+            <h5 class="fw-semibold mb-3">Available Test Programs</h5>
+
+            {% if available_tests %}
+            <ul class="list-group">
+
+                {% for test in available_tests %}
+                <li class="list-group-item d-flex justify-content-between align-items-center test-card">
+
+                    <div>
+                        <i class="bi bi-file-earmark-code me-2 text-primary"></i>
+                        {{ test }}
+                    </div>
+
+                    <button class="btn btn-sm btn-primary"
+                        onclick="runTest('{{ test }}', '{{ selected_vehicle.id }}')">
+                        <i class="bi bi-play-fill me-1"></i>Run
+                    </button>
+
+                </li>
+                {% endfor %}
+
+            </ul>
+
+            {% else %}
+                <p class="text-muted">No test sequence files found in folder.</p>
+            {% endif %}
+
+            <!-- ========================= RESULT TABLE ========================= -->
+            <div class="mt-5">
+                <h5 class="fw-semibold">Test Execution Result</h5>
+
+                <table class="table table-bordered table-hover mt-3 test-result-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="20%">Test</th>
+                            <th width="20%">Action</th>
+                            <th width="45%">Output</th>
+                            <th width="15%">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultBody">
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">
+                                No tests executed yet.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            {% else %}
+
+            <!-- ========================= NO TEST PROGRAMS AVAILABLE ========================= -->
+            <div class="text-center py-5">
+                <i class="bi bi-folder-x display-3 text-muted"></i>
+
+                <h5 class="mt-3 fw-semibold">No Test Programs Found</h5>
+                <p class="text-muted">Test folder not found for this vehicle model.</p>
+
+                <button class="btn btn-outline-primary btn-lg" onclick="syncTestPrograms()">
+                    <i class="bi bi-cloud-arrow-down me-1"></i>Sync Test Programs
+                </button>
+            </div>
+
+            <script>
+                function syncTestPrograms() {
+                    alert("Checking client's C:\\Test_Programs folder...\n(Windows client integration coming soon)");
+                }
+            </script>
+
+            {% endif %}
+        </div>
+    </div>
+
+    {% endif %}
+</div>
+
+<!-- ========================= RUN TEST JS ========================= -->
+<script>
+function runTest(testFile, vehicleId) {
+
+    let tbody = document.getElementById("resultBody");
+    tbody.innerHTML = `
+        <tr><td colspan="4" class="text-center text-muted">Running test...</td></tr>
+    `;
+
+    fetch("/run-test", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            test_file: testFile,
+            vehicle_id: vehicleId
+        })
+    })
+    .then(r => r.json())
+    .then(res => {
+
+        tbody.innerHTML = `
+            <tr>
+                <td>${res.test}</td>
+                <td>${res.action}</td>
+                <td><pre>${res.output}</pre></td>
+                <td>
+                    <span class="badge ${res.status === 'PASS' ? 'bg-success' : 'bg-danger'}">
+                        ${res.status}
+                    </span>
+                </td>
+            </tr>
+        `;
+    })
+    .catch(err => {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-danger">Error executing test.</td>
+            </tr>
+        `;
+    });
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Logs - NIRIX Diagnostics{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><i class="bi bi-journal-text me-2"></i>Test Execution Logs</h1>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-white">
+            <form method="GET" class="row g-3">
+                {% if current_user.role.name == 'Admin' and users %}
+                <div class="col-md-2">
+                    <select name="user_id" class="form-select form-select-sm">
+                        <option value="">All Users</option>
+                        {% for u in users %}
+                        <option value="{{ u.id }}" {% if filters.user_id == u.id %}selected{% endif %}>{{ u.email }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                <div class="col-md-2">
+                    <select name="vehicle_id" class="form-select form-select-sm">
+                        <option value="">All Vehicles</option>
+                        {% for v in vehicles %}
+                        <option value="{{ v.id }}" {% if filters.vehicle_id == v.id %}selected{% endif %}>{{ v.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="status" class="form-select form-select-sm">
+                        <option value="">All Status</option>
+                        <option value="PASS" {% if filters.status == 'PASS' %}selected{% endif %}>PASS</option>
+                        <option value="FAIL" {% if filters.status == 'FAIL' %}selected{% endif %}>FAIL</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="text" name="vin" class="form-control form-control-sm" placeholder="VIN" value="{{ filters.vin or '' }}">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="date_from" class="form-control form-control-sm" value="{{ filters.date_from or '' }}" title="From Date">
+                </div>
+                <div class="col-md-2">
+                    <div class="btn-group w-100">
+                        <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel me-1"></i>Filter</button>
+                        <a href="{{ url_for('web.logs') }}" class="btn btn-outline-secondary btn-sm">Clear</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="card-body p-0">
+            {% if logs %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Date/Time</th>
+                            <th>User</th>
+                            <th>Vehicle</th>
+                            <th>Test</th>
+                            <th>VIN</th>
+                            <th>Status</th>
+                            <th>Client</th>
+                            <th>Duration</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td><small class="text-muted">#{{ log.id }}</small></td>
+                            <td>
+                                <small>{{ log.created_at.strftime('%Y-%m-%d') }}</small><br>
+                                <small class="text-muted">{{ log.created_at.strftime('%H:%M:%S') }}</small>
+                            </td>
+                            <td>{{ log.user.email if log.user else 'N/A' }}</td>
+                            <td>{{ log.vehicle.name if log.vehicle else 'N/A' }}</td>
+                            <td>{{ log.test.name if log.test else 'N/A' }}</td>
+                            <td><code>{{ log.vin or '-' }}</code></td>
+                            <td>
+                                {% if log.status == 'PASS' %}
+                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>PASS</span>
+                                {% else %}
+                                <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>FAIL</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ log.client_platform or '-' }}</small><br>
+                                <small class="text-muted">v{{ log.client_version or '?' }}</small>
+                            </td>
+                            <td>
+                                {% if log.execution_time %}
+                                {{ "%.2f"|format(log.execution_time) }}s
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#logModal{{ log.id }}" title="View Details">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+
+                        <div class="modal fade" id="logModal{{ log.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Log #{{ log.id }} Details</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <strong>Test:</strong> {{ log.test.name if log.test else 'N/A' }}<br>
+                                                <strong>Vehicle:</strong> {{ log.vehicle.name if log.vehicle else 'N/A' }}<br>
+                                                <strong>VIN:</strong> {{ log.vin or 'N/A' }}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>Status:</strong> 
+                                                {% if log.status == 'PASS' %}
+                                                <span class="badge bg-success">PASS</span>
+                                                {% else %}
+                                                <span class="badge bg-danger">FAIL</span>
+                                                {% endif %}<br>
+                                                <strong>Client:</strong> {{ log.client_platform or 'N/A' }} v{{ log.client_version or '?' }}<br>
+                                                <strong>Duration:</strong> {{ "%.2f"|format(log.execution_time) if log.execution_time else 'N/A' }}s
+                                            </div>
+                                        </div>
+                                        {% if log.log_text %}
+                                        <div class="mb-3">
+                                            <strong>Log Output:</strong>
+                                            <pre class="bg-dark text-light p-3 rounded mt-2" style="max-height: 300px; overflow-y: auto;">{{ log.log_text }}</pre>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if pagination.pages > 1 %}
+            <nav class="p-3">
+                <ul class="pagination justify-content-center mb-0">
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('web.logs', page=pagination.prev_num, **filters) }}">Previous</a>
+                    </li>
+                    {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if page_num %}
+                            <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('web.logs', page=page_num, **filters) }}">{{ page_num }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('web.logs', page=pagination.next_num, **filters) }}">Next</a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted"></i>
+                <p class="text-muted mt-3">No logs found</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Downloads - NIRIX Diagnostics{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+      <i class="bi bi-download me-2"></i>Downloads
+    </h1>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <!-- Windows client card -->
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">
+            <i class="bi bi-windows me-2"></i>Windows Diagnostic Client
+          </h5>
+        </div>
+        <div class="card-body">
+          {% if windows_build %}
+          <p class="mb-1">
+            <strong>Version:</strong>
+            {{ windows_build.version }}
+          </p>
+          <p class="mb-1">
+            <strong>Released:</strong>
+            {{ windows_build.created_at.strftime("%Y-%m-%d") if windows_build.created_at else "N/A" }}
+          </p>
+          {% if windows_build.release_notes %}
+          <p class="mb-3">
+            <strong>Release Notes:</strong><br>
+            <span class="text-muted">{{ windows_build.release_notes }}</span>
+          </p>
+          {% endif %}
+          <a
+            href="{{ url_for('api.download_build', build_id=windows_build.id) }}"
+            class="btn btn-primary"
+          >
+            <i class="bi bi-download me-2"></i>Download EXE
+          </a>
+          {% else %}
+          <div class="text-center py-4">
+            <i class="bi bi-hourglass-split display-4 text-muted"></i>
+            <p class="text-muted mt-2">
+              Windows client coming soon. No active Windows build configured.
+            </p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Android app card -->
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">
+            <i class="bi bi-android2 me-2"></i>Android App
+          </h5>
+        </div>
+        <div class="card-body">
+          {% if android_build %}
+          <p class="mb-1">
+            <strong>Version:</strong>
+            {{ android_build.version }}
+          </p>
+          <p class="mb-1">
+            <strong>Released:</strong>
+            {{ android_build.created_at.strftime("%Y-%m-%d") if android_build.created_at else "N/A" }}
+          </p>
+          {% if android_build.release_notes %}
+          <p class="mb-3">
+            <strong>Release Notes:</strong><br>
+            <span class="text-muted">{{ android_build.release_notes }}</span>
+          </p>
+          {% endif %}
+          <a
+            href="{{ url_for('api.download_build', build_id=android_build.id) }}"
+            class="btn btn-success"
+          >
+            <i class="bi bi-download me-2"></i>Download APK
+          </a>
+          {% else %}
+          <div class="text-center py-4">
+            <i class="bi bi-hourglass-split display-4 text-muted"></i>
+            <p class="text-muted mt-2">
+              Android app coming soon. No active Android build configured.
+            </p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Test bundles section -->
+  <div class="card mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">
+        <i class="bi bi-box-seam me-2"></i>Test Bundles by Vehicle
+      </h5>
+      <span class="text-muted small">
+        Latest active bundle per vehicle
+      </span>
+    </div>
+    <div class="card-body p-0">
+      {% if bundles %}
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Vehicle</th>
+              <th>Version</th>
+              <th>Created</th>
+              <th>Status</th>
+              <th style="width: 140px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for bundle in bundles %}
+            <tr>
+              <td>{{ bundle.vehicle.name if bundle.vehicle else "Unknown" }}</td>
+              <td>{{ bundle.version }}</td>
+              <td>
+                {{ bundle.created_at.strftime("%Y-%m-%d %H:%M") if bundle.created_at else "N/A" }}
+              </td>
+              <td>
+                {% if bundle.is_active %}
+                <span class="badge bg-success">Active</span>
+                {% else %}
+                <span class="badge bg-secondary">Inactive</span>
+                {% endif %}
+              </td>
+              <td>
+                <a
+                  href="{{ url_for('api.download_bundle', bundle_id=bundle.id) }}"
+                  class="btn btn-sm btn-outline-primary"
+                >
+                  <i class="bi bi-download me-1"></i>Download
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="p-3 text-center text-muted">
+        No active test bundles found. Configure bundles in the admin interface.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- CAN driver links -->
+  <div class="card">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">
+        <i class="bi bi-usb-symbol me-2"></i>CAN Interface Drivers
+      </h5>
+    </div>
+    <div class="card-body">
+      <p class="text-muted">
+        Install the appropriate CAN driver on the Windows diagnostic machine
+        before running tests with PCAN / Kvaser / Vector hardware.
+      </p>
+      <div class="row g-3">
+        {% for driver in can_drivers %}
+        <div class="col-md-4">
+          <div class="border rounded p-3 h-100">
+            <h6 class="mb-1">{{ driver.name }}</h6>
+            <p class="mb-1"><small class="text-muted">{{ driver.vendor }}</small></p>
+            <p class="small text-muted">{{ driver.description }}</p>
+            <a href="{{ driver.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+              Open Download Page
+            </a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

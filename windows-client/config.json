@@ -1,0 +1,16 @@
+{
+    "can_interface": "PCAN_USBBUS1",
+    "can_bitrate": 500000,
+    "strict_sequential": true,
+    "theme": "light",
+    "on_click": "single",
+    "smtp": {
+        "server": "",
+        "port": 587,
+        "use_tls": true,
+        "username": "",
+        "password": "",
+        "from_addr": ""
+    },
+    "keep_log_days": 7
+}
